@@ -44,7 +44,7 @@ game_phase = "menu"
 show_index = 0
 showing = False
 show_timer = 0
-show_duration = 700
+show_duration = 1500
 
 countdown_start = None
 
@@ -57,7 +57,7 @@ replay_button = pygame.Rect(20, 230, 100, 40)
 
 # Option Slider
 slider_rect = pygame.Rect(300, 150, 200, 10)
-slider_knob = pygame.Rect(300 + int((show_duration - 300) / 1000 * 200), 140, 20, 30)
+slider_knob = pygame.Rect(300 + int((show_duration - 300) / 2000 * 200), 140, 20, 30)
 dragging = False
 
 def draw_main_menu():
@@ -154,7 +154,7 @@ def begin_countdown():
     game_phase = "countdown"
 
 def start_game():
-    global reveal_order, shown, clicked_order, show_index, showing, show_timer
+    global reveal_order, shown, clicked_order, show_index, showing, show_timer, front_images
 
     # randomly choose 5 image
     chosen_ids = random.sample(range(1, 12), 5)
@@ -203,7 +203,7 @@ while running:
                 x = min(max(slider_rect.x, event.pos[0]), slider_rect.x + slider_rect.width)
                 slider_knob.x = x
                 ratio = (x - slider_rect.x) / slider_rect.width
-                show_duration = int(300 + ratio * 1000)
+                show_duration = int(300 + ratio * 2000)
 
         elif game_phase == "input":
             if event.type == pygame.MOUSEBUTTONDOWN:
