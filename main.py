@@ -15,9 +15,17 @@ big_font = pygame.font.SysFont(None, 96)
 # Load and scale images
 back_image = pygame.image.load("images/back.png")
 back_image = pygame.transform.scale(back_image, (100, 150))
-# front_images = [pygame.image.load(f"img{i}.png") for i in range(1, 6)]
-front_images = [pygame.image.load(f"images/1.png") for i in range(1, 6)]
-front_images = [pygame.transform.scale(img, (100, 150)) for img in front_images]
+#front_images = [pygame.image.load(f"images/{i}.png") for i in range(1, 6)]
+#front_images = [pygame.image.load(f"images/1.png") for i in range(1, 6)]
+#front_images = [pygame.transform.scale(img, (100, 150)) for img in front_images]
+# 從 1–10 中隨機挑 5 張
+chosen_ids = random.sample(range(1, 12), 5)
+# 載入並縮放       
+front_images = []
+for idx in chosen_ids:
+    img = pygame.image.load(f"images/{idx}.png")
+    img = pygame.transform.scale(img, (100, 150))
+    front_images.append(img)
 
 CARD_WIDTH, CARD_HEIGHT = 100, 150
 GAP = 20
@@ -44,6 +52,7 @@ countdown_start = None
 start_button = pygame.Rect(300, 100, 200, 50)
 option_button = pygame.Rect(300, 180, 200, 50)
 back_button = pygame.Rect(20, 20, 100, 40)
+replay_button = pygame.Rect(20, 230, 100, 40)
 
 
 # Option Slider
@@ -126,6 +135,12 @@ def draw_game(text=""):
     text_rect = text_surface.get_rect(center=back_button.center)
     screen.blit(text_surface, text_rect)
 
+    if game_phase == "done":
+        pygame.draw.rect(screen, (0, 150, 0), replay_button)
+        text_surface = font_small.render("重新遊玩", True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=replay_button.center)
+        screen.blit(text_surface, text_rect)
+
 
     pygame.display.update()
 
@@ -140,6 +155,16 @@ def begin_countdown():
 
 def start_game():
     global reveal_order, shown, clicked_order, show_index, showing, show_timer
+
+    # randomly choose 5 image
+    chosen_ids = random.sample(range(1, 12), 5)
+    # load      
+    front_images = []
+    for idx in chosen_ids:
+        img = pygame.image.load(f"images/{idx}.png")
+        img = pygame.transform.scale(img, (100, 150))
+        front_images.append(img)
+
     shown = [False] * 5
     clicked_order = []
     reveal_order = list(range(5))
@@ -190,6 +215,15 @@ while running:
                         if len(clicked_order) == 5:
                             end_time = time.time()
                             game_phase = "done"
+        
+        elif game_phase == "done":
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.collidepoint(event.pos):
+                    game_phase = "menu"
+                elif replay_button.collidepoint(event.pos):
+                    start_game()
+                    countdown_start = time.time()
+                    game_phase = "countdown"
 
         # handle back to menu
         if game_phase in ("options", "game", "input", "done"):
