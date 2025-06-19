@@ -17,10 +17,8 @@ big_font = pygame.font.SysFont(None, 96)
 # Load and scale images
 back_image = pygame.image.load("images/back.png")
 back_image = pygame.transform.scale(back_image, (100, 150))
-#front_images = [pygame.image.load(f"images/{i}.png") for i in range(1, 6)]
-#front_images = [pygame.image.load(f"images/1.png") for i in range(1, 6)]
-#front_images = [pygame.transform.scale(img, (100, 150)) for img in front_images]
-# 從 1–10 中隨機挑 5 張
+
+# 從 1–10 中隨機挑選指定數量的卡片
 chosen_ids = random.sample(range(1, 12), CARD_NUMBER)
 # 載入並縮放       
 front_images = []
@@ -31,10 +29,16 @@ for idx in chosen_ids:
 
 CARD_WIDTH, CARD_HEIGHT = 100, 150
 GAP = 20
-TOTAL_WIDTH = CARD_NUMBER * CARD_WIDTH + 4 * GAP
-START_X = (SCREEN_WIDTH - TOTAL_WIDTH) // 2
-Y_POS = (SCREEN_HEIGHT - CARD_HEIGHT) // 2
-positions = [pygame.Rect(START_X + i * (CARD_WIDTH + GAP), Y_POS, CARD_WIDTH, CARD_HEIGHT) for i in range(7)]
+
+# Function to calculate positions based on card number
+def calculate_positions(card_count):
+    total_width = card_count * CARD_WIDTH + (card_count - 1) * GAP
+    start_x = (SCREEN_WIDTH - total_width) // 2
+    y_pos = (SCREEN_HEIGHT - CARD_HEIGHT) // 2
+    return [pygame.Rect(start_x + i * (CARD_WIDTH + GAP), y_pos, CARD_WIDTH, CARD_HEIGHT) for i in range(card_count)]
+
+# Initialize positions
+positions = calculate_positions(CARD_NUMBER)
 
 # State variables
 shown = [False] * 7
@@ -50,25 +54,23 @@ show_duration = 1500
 
 countdown_start = None
 
+show_choose_message = False
+choose_message_start = None
+
 # Menu Buttons
-start_button = pygame.Rect(300, 100, 200, 50)
-option_button = pygame.Rect(300, 180, 200, 50)
+start_button = pygame.Rect(400, 100, 200, 50)
+option_button = pygame.Rect(400, 180, 200, 50)
 back_button = pygame.Rect(20, 20, 100, 40)
 replay_button = pygame.Rect(20, 230, 100, 40)
-
 
 # Option Slider
 slider_rect = pygame.Rect(300, 150, 200, 10)
 slider_knob = pygame.Rect(300 + int((show_duration - 300) / 2000 * 200), 140, 20, 30)
 dragging = False
 
-
 card_number=[]
 for i in range(3):
     card_number.append(pygame.Rect(200 + i * 150, 300, 60, 80))
-
-
-
 
 def draw_main_menu():
     screen.fill((255, 255, 255))
@@ -83,7 +85,6 @@ def draw_main_menu():
     screen.blit(text_surface, text_rect)
     pygame.display.update()
 
-
 def draw_options():
     screen.fill((240, 240, 240))
     screen.blit(font.render("翻牌顯示時間", True, (0, 0, 0)), (300, 80))
@@ -96,7 +97,6 @@ def draw_options():
     value_text = font.render(f"{show_duration} ms", True, (0, 0, 0))
     screen.blit(value_text, (slider_rect.right + 20, slider_rect.y - 10))
 
-
     # 卡排數目 (尚未做)
     screen.blit(font.render("幾張牌數", True, (0, 0, 0)), (300, 200))
 
@@ -106,7 +106,9 @@ def draw_options():
         text_rect = text_surface.get_rect(center=card_number[i].center)
         screen.blit(text_surface, text_rect)
 
-
+    # Display the selected card number (current choice)
+    selected_card_text = font.render(f"當前選擇的牌數: {CARD_NUMBER} 張", True, (0, 0, 0))
+    screen.blit(selected_card_text, (600, 325))  # Place it below the card options
 
     # Back button
     pygame.draw.rect(screen, (150, 0, 0), back_button)
@@ -115,7 +117,6 @@ def draw_options():
     screen.blit(text_surface, text_rect)
 
     pygame.display.update()
-
 
 def draw_countdown():
     elapsed = time.time() - countdown_start
@@ -129,7 +130,6 @@ def draw_countdown():
         return True, None  # Countdown finished
 
     return False, text  # Still counting
-
 
 def draw_game(screen_text="", countdown_text=""):
     screen.fill((255, 255, 255))
@@ -147,14 +147,11 @@ def draw_game(screen_text="", countdown_text=""):
             pygame.draw.rect(screen, color, positions[i], 4)
 
     if screen_text:
-        # rendered = font.render(text, True, (0, 0, 0))
-        # screen.blit(rendered, (50, 20))
         rendered = font.render(screen_text, True, (0, 0, 0))
         text_rect = rendered.get_rect()
         text_rect.centerx = screen.get_width() // 2
         text_rect.top = 20  # Adjust this as needed for vertical spacing
         screen.blit(rendered, text_rect)
-
 
     # Add a semi-transparent overlay in countdown phase 
     if game_phase == "countdown": 
@@ -163,7 +160,15 @@ def draw_game(screen_text="", countdown_text=""):
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
         if countdown_text: 
-            screen.blit(countdown_text, (SCREEN_WIDTH//2 - countdown_text.get_width()//2, SCREEN_HEIGHT//2 - countdown_text.get_height()//2))       
+            screen.blit(countdown_text, (SCREEN_WIDTH//2 - countdown_text.get_width()//2, SCREEN_HEIGHT//2 - countdown_text.get_height()//2))
+
+    if show_choose_message:
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((255, 255, 255))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        choose_text = big_font.render("Start!", True, (0, 0, 0))
+        screen.blit(choose_text, (SCREEN_WIDTH//2 - choose_text.get_width()//2, SCREEN_HEIGHT//2 - choose_text.get_height()//2))       
 
     # Draw back button
     pygame.draw.rect(screen, (150, 0, 0), back_button)
@@ -177,18 +182,15 @@ def draw_game(screen_text="", countdown_text=""):
         text_rect = text_surface.get_rect(center=replay_button.center)
         screen.blit(text_surface, text_rect)
 
-
     pygame.display.update()
-
 
 def calculate_accuracy():
     return sum(1 for i in range(CARD_NUMBER) if i < len(clicked_order) and clicked_order[i] == reveal_order[i])
 
-
 def start_game():
-    global reveal_order, shown, clicked_order, show_index, showing, show_timer, front_images
+    global reveal_order, shown, clicked_order, show_index, showing, show_timer, front_images, positions, show_choose_message, choose_message_start
 
-    # randomly choose 5 image
+    # randomly choose specified number of images
     chosen_ids = random.sample(range(1, 12), CARD_NUMBER)
     # load      
     front_images = []
@@ -197,7 +199,9 @@ def start_game():
         img = pygame.transform.scale(img, (100, 150))
         front_images.append(img)
 
-
+    # Recalculate positions based on current CARD_NUMBER
+    positions = calculate_positions(CARD_NUMBER)
+    
     shown = [False] * 7     # should be set to maximum 
     clicked_order = []
     reveal_order = list(range(CARD_NUMBER))
@@ -206,6 +210,8 @@ def start_game():
     showing = False
     show_timer = 0
 
+    show_choose_message = False
+    choose_message_start = None
 
 running = True
 while running:
@@ -233,12 +239,18 @@ while running:
 
                 elif card_number[0].collidepoint(event.pos):
                     CARD_NUMBER = 3
+                    # Recalculate positions when card number changes
+                    positions = calculate_positions(CARD_NUMBER)
 
                 elif card_number[1].collidepoint(event.pos):
                     CARD_NUMBER = 5
+                    # Recalculate positions when card number changes
+                    positions = calculate_positions(CARD_NUMBER)
 
                 elif card_number[2].collidepoint(event.pos):
                     CARD_NUMBER = 7
+                    # Recalculate positions when card number changes
+                    positions = calculate_positions(CARD_NUMBER)
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 dragging = False
@@ -261,9 +273,6 @@ while running:
                         elif len(clicked_order) == 1:
                             start_time =time.time()
 
-
-
-
         elif game_phase == "done":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
@@ -285,15 +294,12 @@ while running:
     elif game_phase == "options":
         draw_options()
 
-
     elif game_phase == "countdown":
         countdown_finished, countdown_text = draw_countdown()
         draw_game(countdown_text=countdown_text)
         if countdown_finished:
             start_game()
             game_phase = "game"
-            # start_time = time.time()
-
 
     elif game_phase == "game":
         if not showing and show_index < len(reveal_order):
@@ -306,7 +312,12 @@ while running:
             showing = False
             show_timer = now
         elif show_index >= len(reveal_order):
-            game_phase = "input"
+            if not show_choose_message:
+                show_choose_message = True
+                choose_message_start = time.time()
+            elif time.time() - choose_message_start >= 1.5:  # Show for 1.5 seconds
+                show_choose_message = False
+                game_phase = "input"
         draw_game()
 
     elif game_phase == "done":
@@ -317,6 +328,5 @@ while running:
 
     pygame.display.flip()
     clock.tick(30)
-
 
 pygame.quit()
