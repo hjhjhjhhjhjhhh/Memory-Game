@@ -3,7 +3,9 @@ import random
 import time
 
 pygame.init()
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 300
+SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 400
+CARD_NUMBER = 5 # DEFAULT 
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("記憶遊戲")
 clock = pygame.time.Clock()
@@ -19,7 +21,7 @@ back_image = pygame.transform.scale(back_image, (100, 150))
 #front_images = [pygame.image.load(f"images/1.png") for i in range(1, 6)]
 #front_images = [pygame.transform.scale(img, (100, 150)) for img in front_images]
 # 從 1–10 中隨機挑 5 張
-chosen_ids = random.sample(range(1, 12), 5)
+chosen_ids = random.sample(range(1, 12), CARD_NUMBER)
 # 載入並縮放       
 front_images = []
 for idx in chosen_ids:
@@ -29,13 +31,13 @@ for idx in chosen_ids:
 
 CARD_WIDTH, CARD_HEIGHT = 100, 150
 GAP = 20
-TOTAL_WIDTH = 5 * CARD_WIDTH + 4 * GAP
+TOTAL_WIDTH = CARD_NUMBER * CARD_WIDTH + 4 * GAP
 START_X = (SCREEN_WIDTH - TOTAL_WIDTH) // 2
 Y_POS = (SCREEN_HEIGHT - CARD_HEIGHT) // 2
-positions = [pygame.Rect(START_X + i * (CARD_WIDTH + GAP), Y_POS, CARD_WIDTH, CARD_HEIGHT) for i in range(5)]
+positions = [pygame.Rect(START_X + i * (CARD_WIDTH + GAP), Y_POS, CARD_WIDTH, CARD_HEIGHT) for i in range(7)]
 
 # State variables
-shown = [False] * 5
+shown = [False] * 7
 clicked_order = []
 reveal_order = []
 start_time = None
@@ -59,6 +61,14 @@ replay_button = pygame.Rect(20, 230, 100, 40)
 slider_rect = pygame.Rect(300, 150, 200, 10)
 slider_knob = pygame.Rect(300 + int((show_duration - 300) / 2000 * 200), 140, 20, 30)
 dragging = False
+
+
+card_number=[]
+for i in range(3):
+    card_number.append(pygame.Rect(200 + i * 150, 300, 60, 80))
+
+
+
 
 def draw_main_menu():
     screen.fill((255, 255, 255))
@@ -88,7 +98,14 @@ def draw_options():
 
 
     # 卡排數目 (尚未做)
-    # screen.blit(font.render("幾張牌數", True, (0, 0, 0)), (300, 200))
+    screen.blit(font.render("幾張牌數", True, (0, 0, 0)), (300, 200))
+
+    for i in range(3):
+        pygame.draw.rect(screen, (200, 200, 200), card_number[i])
+        text_surface = font_small.render(f"{3+i*2}", True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=card_number[i].center)
+        screen.blit(text_surface, text_rect)
+
 
 
     # Back button
@@ -117,7 +134,7 @@ def draw_countdown():
 def draw_game(screen_text="", countdown_text=""):
     screen.fill((255, 255, 255))
 
-    for i in range(5):
+    for i in range(CARD_NUMBER):
         img = front_images[i] if shown[i] else back_image
         screen.blit(img, positions[i])
 
@@ -165,14 +182,14 @@ def draw_game(screen_text="", countdown_text=""):
 
 
 def calculate_accuracy():
-    return sum(1 for i in range(5) if i < len(clicked_order) and clicked_order[i] == reveal_order[i])
+    return sum(1 for i in range(CARD_NUMBER) if i < len(clicked_order) and clicked_order[i] == reveal_order[i])
 
 
 def start_game():
     global reveal_order, shown, clicked_order, show_index, showing, show_timer, front_images
 
     # randomly choose 5 image
-    chosen_ids = random.sample(range(1, 12), 5)
+    chosen_ids = random.sample(range(1, 12), CARD_NUMBER)
     # load      
     front_images = []
     for idx in chosen_ids:
@@ -180,9 +197,10 @@ def start_game():
         img = pygame.transform.scale(img, (100, 150))
         front_images.append(img)
 
-    shown = [False] * 5
+
+    shown = [False] * 7     # should be set to maximum 
     clicked_order = []
-    reveal_order = list(range(5))
+    reveal_order = list(range(CARD_NUMBER))
     random.shuffle(reveal_order)
     show_index = 0
     showing = False
@@ -212,6 +230,16 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if slider_knob.collidepoint(event.pos):
                     dragging = True
+
+                elif card_number[0].collidepoint(event.pos):
+                    CARD_NUMBER = 3
+
+                elif card_number[1].collidepoint(event.pos):
+                    CARD_NUMBER = 5
+
+                elif card_number[2].collidepoint(event.pos):
+                    CARD_NUMBER = 7
+
             elif event.type == pygame.MOUSEBUTTONUP:
                 dragging = False
             elif event.type == pygame.MOUSEMOTION and dragging:
@@ -227,10 +255,15 @@ while running:
                         clicked_order.append(i)
                         shown[i] = True
                         draw_game()
-                        if len(clicked_order) == 5:
+                        if len(clicked_order) == CARD_NUMBER:
                             end_time = time.time()
                             game_phase = "done"
-        
+                        elif len(clicked_order) == 1:
+                            start_time =time.time()
+
+
+
+
         elif game_phase == "done":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
@@ -259,7 +292,7 @@ while running:
         if countdown_finished:
             start_game()
             game_phase = "game"
-            start_time = time.time()
+            # start_time = time.time()
 
 
     elif game_phase == "game":
@@ -279,7 +312,7 @@ while running:
     elif game_phase == "done":
         total_time = round(end_time - start_time, 2)
         accuracy = calculate_accuracy()
-        screen_text = f"時間: {total_time}s  正確率: {accuracy}/5"
+        screen_text = f"時間: {total_time}s  正確率: {accuracy}/{CARD_NUMBER}"
         draw_game(screen_text)
 
     pygame.display.flip()
