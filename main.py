@@ -1,21 +1,33 @@
 import pygame
 import random
 import time
+import sys
+import os
 
 pygame.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 400
 CARD_NUMBER = 5 # DEFAULT 
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("記憶遊戲")
 clock = pygame.time.Clock()
-font = pygame.font.Font("MSJHBD.TTC", 36)
-font_small = pygame.font.Font("MSJHBD.TTC", 24)
+font = pygame.font.Font(resource_path("MSJHBD.TTC"), 36)
+font_small = pygame.font.Font(resource_path("MSJHBD.TTC"), 24)
 big_font = pygame.font.SysFont(None, 96)
+pygame.mixer.init()
+pygame.mixer.music.load(resource_path("bgm.mp3"))
 
 
 # Load and scale images
-back_image = pygame.image.load("images/back.png")
+back_image = pygame.image.load(resource_path("images/back.png"))
 back_image = pygame.transform.scale(back_image, (100, 150))
 
 # 從 1–10 中隨機挑選指定數量的卡片
@@ -23,7 +35,7 @@ chosen_ids = random.sample(range(1, 12), CARD_NUMBER)
 # 載入並縮放       
 front_images = []
 for idx in chosen_ids:
-    img = pygame.image.load(f"images/{idx}.png")
+    img = pygame.image.load(resource_path(f"images/{idx}.png"))
     img = pygame.transform.scale(img, (100, 150))
     front_images.append(img)
 
@@ -61,7 +73,7 @@ choose_message_start = None
 start_button = pygame.Rect(400, 100, 200, 50)
 option_button = pygame.Rect(400, 180, 200, 50)
 back_button = pygame.Rect(20, 20, 100, 40)
-replay_button = pygame.Rect(20, 230, 100, 40)
+replay_button = pygame.Rect(20, 350, 100, 40)
 
 # Option Slider
 slider_rect = pygame.Rect(300, 150, 200, 10)
@@ -195,7 +207,7 @@ def start_game():
     # load      
     front_images = []
     for idx in chosen_ids:
-        img = pygame.image.load(f"images/{idx}.png")
+        img = pygame.image.load(resource_path(f"images/{idx}.png"))
         img = pygame.transform.scale(img, (100, 150))
         front_images.append(img)
 
@@ -227,6 +239,7 @@ while running:
         if game_phase == "menu":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.collidepoint(event.pos):
+                    start_game()
                     countdown_start = time.time()
                     game_phase = "countdown"
                 elif option_button.collidepoint(event.pos):
@@ -286,6 +299,12 @@ while running:
         if game_phase in ("options", "game", "input", "done"):
             if event.type == pygame.MOUSEBUTTONDOWN and back_button.collidepoint(event.pos):
                 game_phase = "menu"
+        
+        if game_phase in ("countdown", "game", "input", "done"):
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.play(-1)
+        else:
+            pygame.mixer.music.stop()
 
     # --- UPDATE GAME STATE ---
     if game_phase == "menu":
