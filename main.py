@@ -73,6 +73,7 @@ def draw_main_menu():
     screen.blit(text_surface, text_rect)
     pygame.display.update()
 
+
 def draw_options():
     screen.fill((240, 240, 240))
     screen.blit(font.render("翻牌顯示時間", True, (0, 0, 0)), (300, 80))
@@ -85,6 +86,11 @@ def draw_options():
     value_text = font.render(f"{show_duration} ms", True, (0, 0, 0))
     screen.blit(value_text, (slider_rect.right + 20, slider_rect.y - 10))
 
+
+    # 卡排數目 (尚未做)
+    # screen.blit(font.render("幾張牌數", True, (0, 0, 0)), (300, 200))
+
+
     # Back button
     pygame.draw.rect(screen, (150, 0, 0), back_button)
     text_surface = font_small.render("回到主頁", True, (255, 255, 255))
@@ -93,21 +99,24 @@ def draw_options():
 
     pygame.display.update()
 
-def draw_countdown():
-    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    overlay.fill((255, 255, 255))
-    overlay.set_alpha(200)
-    screen.blit(overlay, (0, 0))
 
+def draw_countdown():
     elapsed = time.time() - countdown_start
     number = 3 - int(elapsed)
+
     if number > 0:
         text = big_font.render(str(number), True, (0, 0, 0))
-        screen.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, SCREEN_HEIGHT//2 - text.get_height()//2))
-    pygame.display.update()
+    elif elapsed <= 3.5:
+        text = big_font.render("Go!", True, (0, 0, 0))    
+    else:
+        return True, None  # Countdown finished
 
-def draw_game(text=""):
+    return False, text  # Still counting
+
+
+def draw_game(screen_text="", countdown_text=""):
     screen.fill((255, 255, 255))
+
     for i in range(5):
         img = front_images[i] if shown[i] else back_image
         screen.blit(img, positions[i])
@@ -120,14 +129,24 @@ def draw_game(text=""):
                 color = (200, 200, 200)
             pygame.draw.rect(screen, color, positions[i], 4)
 
-    if text:
+    if screen_text:
         # rendered = font.render(text, True, (0, 0, 0))
         # screen.blit(rendered, (50, 20))
-        rendered = font.render(text, True, (0, 0, 0))
+        rendered = font.render(screen_text, True, (0, 0, 0))
         text_rect = rendered.get_rect()
         text_rect.centerx = screen.get_width() // 2
         text_rect.top = 20  # Adjust this as needed for vertical spacing
         screen.blit(rendered, text_rect)
+
+
+    # Add a semi-transparent overlay in countdown phase 
+    if game_phase == "countdown": 
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((255, 255, 255))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        if countdown_text: 
+            screen.blit(countdown_text, (SCREEN_WIDTH//2 - countdown_text.get_width()//2, SCREEN_HEIGHT//2 - countdown_text.get_height()//2))       
 
     # Draw back button
     pygame.draw.rect(screen, (150, 0, 0), back_button)
@@ -148,10 +167,6 @@ def draw_game(text=""):
 def calculate_accuracy():
     return sum(1 for i in range(5) if i < len(clicked_order) and clicked_order[i] == reveal_order[i])
 
-def begin_countdown():
-    global countdown_start, game_phase
-    countdown_start = time.time()
-    game_phase = "countdown"
 
 def start_game():
     global reveal_order, shown, clicked_order, show_index, showing, show_timer, front_images
@@ -237,14 +252,15 @@ while running:
     elif game_phase == "options":
         draw_options()
 
+
     elif game_phase == "countdown":
-        draw_game()
-        draw_countdown()
-        elapsed = time.time() - countdown_start
-        if elapsed > 3.5:
+        countdown_finished, countdown_text = draw_countdown()
+        draw_game(countdown_text=countdown_text)
+        if countdown_finished:
             start_game()
             game_phase = "game"
             start_time = time.time()
+
 
     elif game_phase == "game":
         if not showing and show_index < len(reveal_order):
@@ -267,7 +283,7 @@ while running:
         draw_game(screen_text)
 
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(30)
 
 
 pygame.quit()
