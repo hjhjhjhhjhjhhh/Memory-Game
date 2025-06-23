@@ -46,7 +46,7 @@ GAP = 20
 def calculate_positions(card_count):
     total_width = card_count * CARD_WIDTH + (card_count - 1) * GAP
     start_x = (SCREEN_WIDTH - total_width) // 2
-    y_pos = (SCREEN_HEIGHT - CARD_HEIGHT) // 2
+    y_pos = (SCREEN_HEIGHT - CARD_HEIGHT) // 2 - 10
     return [pygame.Rect(start_x + i * (CARD_WIDTH + GAP), y_pos, CARD_WIDTH, CARD_HEIGHT) for i in range(card_count)]
 
 # Initialize positions
@@ -72,22 +72,40 @@ choose_message_start = None
 # Menu Buttons
 start_button = pygame.Rect(400, 100, 200, 50)
 option_button = pygame.Rect(400, 180, 200, 50)
-back_button = pygame.Rect(20, 20, 100, 40)
-replay_button = pygame.Rect(20, 350, 100, 40)
+back_button = pygame.Rect(20, 20, 105, 40)
+replay_button = pygame.Rect(440, 300, 120, 40)
 
 # Option Slider
-slider_rect = pygame.Rect(300, 150, 200, 10)
-slider_knob = pygame.Rect(300 + int((show_duration - 300) / 2000 * 200), 140, 20, 30)
+slider_rect = pygame.Rect(300, 120, 200, 10)
+slider_knob = pygame.Rect(300 + int((show_duration - 300) / 2000 * 200), 110, 20, 30)
 dragging = False
 
 card_number=[]
 for i in range(3):
-    card_number.append(pygame.Rect(200 + i * 150, 300, 60, 80))
+    card_number.append(pygame.Rect(300 + i * 150, 270, 100, 60))
 
 def draw_main_menu():
+    global start_button, option_button 
+
+    temp_start_button = start_button.copy()
+    temp_option_button = option_button.copy()
+
+    if start_button.collidepoint(pygame.mouse.get_pos()):
+        temp_start_button.inflate_ip(10, 5)
+        start_button_color = (0, 200, 0)
+    else:
+        start_button_color = (34, 139, 34)
+
+    if option_button.collidepoint(pygame.mouse.get_pos()):
+        temp_option_button.inflate_ip(10, 5)
+        option_button_color = (0, 0, 200)
+    else:
+        option_button_color = (25, 25, 112)
+
+
     screen.fill((255, 255, 255))
-    pygame.draw.rect(screen, (0, 200, 0), start_button)
-    pygame.draw.rect(screen, (0, 0, 200), option_button)
+    pygame.draw.rect(screen, start_button_color, temp_start_button, border_radius=5)
+    pygame.draw.rect(screen, option_button_color, temp_option_button, border_radius=5)
     text_surface = font.render("開始遊戲", True, (255, 255, 255))
     text_rect = text_surface.get_rect(center=start_button.center)
     screen.blit(text_surface, text_rect)
@@ -97,9 +115,13 @@ def draw_main_menu():
     screen.blit(text_surface, text_rect)
     pygame.display.update()
 
+
 def draw_options():
+
+    global back_button
+
     screen.fill((240, 240, 240))
-    screen.blit(font.render("翻牌顯示時間", True, (0, 0, 0)), (300, 80))
+    screen.blit(font.render("翻牌顯示時間", True, (0, 0, 0)), (385, 40))
     
     # Slider bar and knob
     pygame.draw.rect(screen, (200, 200, 200), slider_rect)
@@ -107,23 +129,34 @@ def draw_options():
 
     # Duration text
     value_text = font.render(f"{show_duration} ms", True, (0, 0, 0))
-    screen.blit(value_text, (slider_rect.right + 20, slider_rect.y - 10))
+    screen.blit(value_text, (slider_rect.right + 20, slider_rect.y - 20))
 
-    # 卡排數目 (尚未做)
-    screen.blit(font.render("幾張牌數", True, (0, 0, 0)), (300, 200))
+    # 卡排數目
+    screen.blit(font.render(f"當前選擇的牌數: {CARD_NUMBER} 張", True, (0, 0, 0)), (330, 205))
 
     for i in range(3):
-        pygame.draw.rect(screen, (200, 200, 200), card_number[i])
-        text_surface = font_small.render(f"{3+i*2}", True, (255, 255, 255))
+        if card_number[i].collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(screen, (170, 170, 170), card_number[i], border_radius=5)
+        else:
+            pygame.draw.rect(screen, (200, 200, 200), card_number[i], border_radius=5)
+
+        text_surface = font_small.render(f"{3+i*2}", True, (0, 0, 0))
         text_rect = text_surface.get_rect(center=card_number[i].center)
         screen.blit(text_surface, text_rect)
 
     # Display the selected card number (current choice)
-    selected_card_text = font.render(f"當前選擇的牌數: {CARD_NUMBER} 張", True, (0, 0, 0))
-    screen.blit(selected_card_text, (600, 325))  # Place it below the card options
+    # selected_card_text = font.render(f"當前選擇的牌數: {CARD_NUMBER} 張", True, (0, 0, 0))
+    # screen.blit(selected_card_text, (600, 325))  # Place it below the card options
 
     # Back button
-    pygame.draw.rect(screen, (150, 0, 0), back_button)
+    temp_back_button = back_button.copy()
+    if back_button.collidepoint(pygame.mouse.get_pos()):
+        temp_back_button.inflate_ip(10, 5)
+        back_button_color = (150, 0, 0)
+    else:
+        back_button_color = (200, 0, 0)
+        
+    pygame.draw.rect(screen, back_button_color, temp_back_button, border_radius=5)
     text_surface = font_small.render("回到主頁", True, (255, 255, 255))
     text_rect = text_surface.get_rect(center=back_button.center)
     screen.blit(text_surface, text_rect)
@@ -182,14 +215,28 @@ def draw_game(screen_text="", countdown_text=""):
         choose_text = big_font.render("Start!", True, (0, 0, 0))
         screen.blit(choose_text, (SCREEN_WIDTH//2 - choose_text.get_width()//2, SCREEN_HEIGHT//2 - choose_text.get_height()//2))       
 
-    # Draw back button
-    pygame.draw.rect(screen, (150, 0, 0), back_button)
+    # Back button
+    temp_back_button = back_button.copy()
+    if back_button.collidepoint(pygame.mouse.get_pos()) and game_phase != "countdown":
+        temp_back_button.inflate_ip(10, 5)
+        back_button_color = (150, 0, 0)
+    else:
+        back_button_color = (200, 0, 0)
+
+    pygame.draw.rect(screen, back_button_color, temp_back_button, border_radius=5)
     text_surface = font_small.render("回到主頁", True, (255, 255, 255))
     text_rect = text_surface.get_rect(center=back_button.center)
     screen.blit(text_surface, text_rect)
 
     if game_phase == "done":
-        pygame.draw.rect(screen, (0, 150, 0), replay_button)
+        temp_replay_button = replay_button.copy()
+        if replay_button.collidepoint(pygame.mouse.get_pos()) and game_phase != "countdown":
+            temp_replay_button.inflate_ip(10, 5)
+            replay_button_color = (0, 150, 0)
+        else:
+            replay_button_color = (0, 180, 0)
+
+        pygame.draw.rect(screen, replay_button_color, temp_replay_button, border_radius=5)
         text_surface = font_small.render("重新遊玩", True, (255, 255, 255))
         text_rect = text_surface.get_rect(center=replay_button.center)
         screen.blit(text_surface, text_rect)
@@ -305,6 +352,7 @@ while running:
                 pygame.mixer.music.play(-1)
         else:
             pygame.mixer.music.stop()
+
 
     # --- UPDATE GAME STATE ---
     if game_phase == "menu":
