@@ -15,5 +15,5 @@ python main.py
 
 ## Compile to exe file
 ```
-pyinstaller --onefile --noconsole --add-data "images;images" --add-data "bgm.mp3;." --add-data "MSJHBD.TTC;." main.py
+pyinstaller --onefile --noconsole --icon=icon.ico --add-data "images;images" --add-data "bgm.mp3;." --add-data "MSJHBD.TTC;." --add-data "instruction;instruction" --add-data "icon.ico;." main.py
 ```
